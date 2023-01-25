@@ -1,69 +1,91 @@
-<?php 
-	date_default_timezone_set('Asia/Manila');
+<?php
 
-	$Server = "localhost";    
+require_once 'Database.php';
+
+    $Server = "localhost";    
   	$User = "root";
   	$DBPassword = "";
-  	$Database = "sample";
+  	$Database = "ilearnpos";
   	$Table = 'db_products';
+      $Error = "0";
 
-  	$Message = 'asd';
-  	$TxtBarcode = 'asd';
-  	$TxtProductName = 'asd';
-  	$TxtWarehouseQty = 'asd';
-  	$TxtStoreQty = 'asd';
+  $Message = '';
+  $TxtBarcode = $_POST['temp'];
+  	$TxtProductName = '';
+  	$TxtWarehouseQty = '';
+  	$TxtStoreQty = '';
 
-  	$conn = mysqli_connect($Server, $User, $DBPassword, $Database);
+    $POSDB = new Database($Server,$User,$DBPassword);
 
-    /*$barcode = $_POST['TxtBarcode'];*/
-  	$barcode = '4800361384391';
+    if ($POSDB->Connect()==true)
+    {
+      $Result = $POSDB->SelectDatabase($Database);
+                          
+      if($Result == true)
+      {   
+        FetchInfo($TxtBarcode);
+        
+      }
+      else
+      {
+        $Message = 'Failed to fetch information!';
+        $Error = "1";
+      }
+    }  
+    else
+    {
+      $Message = 'The database is offline!';
+      $Error = "1";    
+    } 
 
-  	search($barcode, $Table);
+  
 
-
-  	/*$XMLData = '';	
-	$XMLData .= ' <output ';
-	$XMLData .= ' Message = ' . '"'.$Message.'"';
-	$XMLData .= ' Barcode = ' . '"'.$TxtBarcode.'"';
-	$XMLData .= ' ProductName = ' . '"'.$TxtProductName.'"';
-	$XMLData .= ' WarehouseQty = ' . '"'.$TxtWarehouseQty.'"';
-  	$XMLData .= ' StoreQty = ' . '"'.$TxtStoreQty.'"';
+    $XMLData = '';	
+    $XMLData .= ' <output ';
+	  $XMLData .= ' Message = ' . '"'.$Message.'"';
+    $XMLData .= ' ProductName = ' . '"'.$TxtProductName.'"';
+    $XMLData .= ' WarehouseQty = ' . '"'.$TxtWarehouseQty.'"';
+    $XMLData .= ' StoreQty = ' . '"'.$TxtStoreQty.'"';
+    $XMLData .= ' Error = ' . '"'.$Error.'"';
 	$XMLData .= ' />';
-
+	
 	//Generate XML output
 	header('Content-Type: text/xml');
 	//Generate XML header
-	echo '<?xml version="1.0" encoding="UTF-8" standalone="yes"<!--  -->';
+	echo '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>';
 	echo '<Document>';    	
 	echo $XMLData;
-	echo '</Document>';*/
+	echo '</Document>';
 
-  		
+    function FetchInfo($TxtBarcode){
+        $sql;
+    
+        //Access Global Variables
+        global $Error, $POSDB, $Message,$TxtProductName,$TxtWarehouseQty,$TxtStoreQty;
+    
+          $sql = "SELECT * FROM db_products WHERE barcode='$TxtBarcode'";
+    
+          $Result = $POSDB->Execute($sql);
+          
+          $POSQuery = $POSDB->GetRows($sql);                
+        
+          if($POSQuery)
+          {
+            $Row = $POSQuery->fetch_array();
+            if($Row)
+              {        
+                $TxtProductName = stripslashes($Row['product_name']);;
+                $TxtWarehouseQty = stripslashes($Row['warehouse_stock']);;
+                $TxtStoreQty = stripslashes($Row['store_stock']);;
+                $Message = "Search completed!";
+                $Error = "0"; 
+              }else{
+                $Message = "No information found. Please try again.";
+                $Error = "1";
+              }            
+          }
+      }
 
-  		function search($barcode, $Table){
-  			$sql;
-  			global $conn, $Message, $TxtBarcode, $TxtProductName, $TxtWarehouseQty, $TxtStoreQty;
-  			$sql = "SELECT * FROM $Table WHERE barcode = '$barcode'";
-	  		$result = mysqli_query($conn, $sql);
+  
 
-	  		if($result){
-	  			$row = mysqli_fetch_row($result);
-
-		  			echo "Barcode: $row[1] <br>";
-		  			echo "Product Name : $row[2] <br>";
-		  			echo "Warehouse Quantity: $row[11] <br>";
-		  			echo "Store Quantity: $row[12] <br>";
-
-		  			  	$TxtBarcode = $row[1];
-  						$TxtProductName = $row[2];
-  						$TxtWarehouseQty = $row[11];
-  						$TxtStoreQty = $row[12];
-
-		  		$Message = "Search Success";
-
-	  		}else{
-	  			$Message = "No data Found";
-	  		}
-  		}
-
- ?>
+?>
