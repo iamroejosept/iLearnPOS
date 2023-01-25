@@ -5,7 +5,7 @@ require_once 'Database.php';
     $Server = "localhost";    
   	$User = "root";
   	$DBPassword = "";
-  	$Database = "ilearnpos";
+  	$Database = "products";
   	$Table = 'db_products';
       $Error = "0";
 

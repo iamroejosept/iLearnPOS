@@ -4,7 +4,7 @@
     $Server = "localhost";    
     $User = "root";
     $DBPassword = "";
-    $Database = "ilearnpos";
+    $Database = "products";
     $Table = 'db_products';
 
   $Message = 'Failed to save information!';
