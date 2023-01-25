@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Products</title>
+	<link rel="stylesheet" type="text/css" href="style.css">
+</head>
+<body>  
+	<h3>Product List</h3>
+	<form method="post" id="formProduct">
+		<div>
+			<label for="TxtBarcode" class="label">Barcode</label>
+			<input type="text" id="TxtBarcode" name="TxtBarcode" class="input_field">
+		</div>
+		<br>
+		<div class="FourInfo">
+			<div class="column">
+				<label for="TxtResBarcode" class="label">Barcode</label> <br/>
+				<input type="text" id="TxtResBarcode" name="TxtResBarcode" class="input_field" readonly>
+			</div>
+			<div class="column">
+				<label for="TxtProductName" class="label">Product Name</label> <br/>
+				<input type="text" id="TxtProductName" name="TxtProductName" class="input_field" readonly>
+			</div>
+			<div class="column">
+				<label for="TxtWarehouseQty" class="label">Warehouse Stock</label> <br/>
+				<input type="text" id="TxtWarehouseQty" name="TxtWarehouseQty" class="input_field">
+			</div>
+			<div>
+				<label for="TxtStoreQty" class="label">Store Stock</label> <br/>
+				<input type="text" id="TxtStoreQty" name="TxtStoreQty" class="input_field"> <br>
+			</div>
+			<br>
+			<input type="submit" name="submit" value="Submit" id="btnSubmit" class="frmButton">
+		</div>
+	</form>
+	<label></label>
+</body>
+</html>
