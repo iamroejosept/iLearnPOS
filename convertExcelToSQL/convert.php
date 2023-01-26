@@ -66,7 +66,7 @@ if(isset($_POST["submit"]))
                 $breakCtr--;
                 continue;
             }else{
-                $query_error = 0;
+                
 
                 if(!empty($row[0])){
 
@@ -93,7 +93,7 @@ if(isset($_POST["submit"]))
                                 "', '" . $row[8] .
                                 "', '" . $row[11] .
                                 "', '" . $row[12] ."'),\n";
-                    trim($sql);
+                    /*trim($sql);*/
 
 
                     /*echo "''$row[0]'' ";
