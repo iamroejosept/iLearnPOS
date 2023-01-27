@@ -257,6 +257,51 @@ if(isset($_REQUEST['viewmemdetailedreport'])){
     }
 }
 
+//Done
+if(isset($_REQUEST['viewtransferreport'])){
+    $fileName = "viewtransferreport.xls"; 
+    $excelData="Baguio-Benguet Community Credit Cooperative". "\n"; 
+    $excelData.="View Transfer Report". "\n"; 
+    $excelData.=$_REQUEST['datefrom']." - ".$_REQUEST['dateto']."\n\n"; 
+    // Display column names as first row 
+    // $excelData.= implode("\t", array_values($fields)) . "\n"; 
+     
+    // Fetch records from database 
+    $query = "SELECT * FROM db_transfers where transfer_date >= '".dashDate($_REQUEST['datefrom'])."' AND transfer_date <=  '".dashDate($_REQUEST['dateto'])."'";
+    $result = $db->query($query);
+    if($result->num_rows > 0){ 
+        // Output each row of the data 
+            while($row = $result->fetch_assoc() ){
+                $response[] = array("product_id"=>$row['product_id'],"quantity"=>$row['quantity'],"current_price"=>$row['current_price'],"area"=>$row['area']);
+            }
+
+            // Column names 
+            $fields = array('BARCODE', 'ITEM DESCRIPTION', 'QUANTITY', 'PRICE', 'AMOUNT'); 
+            $excelData.= implode("\t", array_values($fields)) ."\n";
+
+            $total=0;
+
+            foreach($response as $key => $val){
+                $query1 = "SELECT barcode,product_name FROM db_products WHERE product_id='".$val['product_id']."'";
+                $result1 = mysqli_query($con,$query1);
+                $row1 = mysqli_fetch_array($result1); 
+
+                $response1 = array("barcode"=>$row1['barcode'],"product_name"=>$row1['product_name'],"quantity"=>$val['quantity'],"current_price"=>$val['current_price'],"amount"=>number_format($val['quantity']*$val['current_price'],2));
+
+                array_walk($response1, 'filterData'); 
+                    
+                $excelData .= implode("\t", array_values($response1)) . "\n"; 
+
+                $total+=($val['quantity']*$val['current_price']);
+                
+            }
+            $excelData.= "TOTAL AMOUNT:\t" .number_format($total,2)."\t\t";
+            $excelData .= "\n";
+
+    
+    }
+}
+
 header("Content-Type: application/vnd.ms-excel"); 
 header("Content-Disposition: attachment; filename=\"$fileName\""); 
  
