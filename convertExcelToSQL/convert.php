@@ -48,6 +48,8 @@ if(isset($_POST["submit"]))
         // Get the temporary file name of the uploaded file
         $tmp_name = $_FILES['file']['tmp_name'];
 
+        $fname = $_FILES['file']['name'];
+
         $spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load($tmp_name);
 
         $worksheet = $spreadsheet->getActiveSheet();
@@ -58,6 +60,7 @@ if(isset($_POST["submit"]))
         $sql = "INSERT INTO $table (barcode, product_name, quantity, unit_price, amount, invoice_num, member_id, invoice_date, invoice_total, payment_type, grand_total) VALUES \n";
                 
         foreach ($data as $row) {
+
             if($row[0] == 'Invoice No. : '){
                 $breakCtr = 5;
             }
@@ -140,7 +143,7 @@ if(isset($_POST["submit"]))
         /*unlink($fileName);*/
 
         //save file
-        $fileName = "Mysql (" . date('M-d-Y') .'--' . date('h.i A') . ').sql';
+        $fileName = $fname;
         $handle = fopen($fileName,'w+');
         fwrite($handle,$sql);
         if(fclose($handle)){
