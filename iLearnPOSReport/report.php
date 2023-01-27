@@ -147,7 +147,230 @@ if($result->num_rows > 0){
 
 }
 
+//generates dataid report excel
+if(isset($_REQUEST['dataid'])){
+$fileName = "dataid.xls"; 
+// Column names 
+$fields = array('Invoice No', 'Date', 'Time', 'Mem. No', 'Name', 'Quantity', 'Disc', 'Amount (₱)'); 
+$excelData="Baguio-Benguet Community Credit Cooperative". "\n"; 
+$excelData.="Data ID". "\n"; 
+$excelData.=$_REQUEST['datefrom']." - ".$_REQUEST['dateto']."\n\n"; 
+// Display column names as first row 
+$excelData.= implode("\t", array_values($fields)) . "\n"; 
+ 
+// Fetch records from database ".$_REQUEST['dataid']."
+$query = "SELECT * FROM db_sales,db_sales_product where sales_date >= '".dashDate($_REQUEST['datefrom'])."' AND sales_date <=  '".dashDate($_REQUEST['dateto'])."' AND db_sales.sales_id=db_sales_product.sales_id AND db_sales_product.product_id='".$_REQUEST['dataid']."'";
+$query = $db->query($query);
+if($query->num_rows > 0){ 
+    // Output each row of the data 
+    while($row = $query->fetch_assoc()){ 
+        //$status = ($row['replenish'] == 1)?'Active':'Inactive'; 
+        $member_name = " ";
+        $totalQuantity = 0;
+        $amount = 1;
+        $lineData = array("invoiceno"=>$row['invoiceno'],
+            "sales_date"=>$row['sales_date'],
+            "invoiceno"=>$row['invoiceno'],
+            "member_id"=>$row['member_id'],
+            "member"=>$member_name,
+            "member_id"=>$row['quantity'],
+            "total_quantity"=>$totalQuantity + $row['quantity'],
+            "amount"=> $amount * $row['sale_price'],
+        );
+        array_walk($lineData, 'filterData'); 
+        $excelData .= implode("\t", array_values($lineData)) . "\n"; 
+    } 
+}else{ 
+    
+    $excelData .= 'No records found...'. "\n"; 
+} 
 
+}
+
+
+//done - please recheck
+if(isset($_REQUEST['viewtallyreport'])){
+$fileName = "viewtallyreport.xls"; 
+// Column names 
+$fields = array('Date', 'Total'); 
+$excelData="Baguio-Benguet Community Credit Cooperative". "\n"; 
+$excelData.="Data ID". "\n"; 
+$excelData.=$_REQUEST['datefrom']." - ".$_REQUEST['dateto']."\n\n"; 
+// Display column names as first row 
+$excelData.= implode("\t", array_values($fields)) . "\n"; 
+
+$t=time()+28800;
+$thedate=date("Y-m-d",$t);
+ 
+// Fetch records from database ".$_REQUEST['dataid']."
+$query = "SELECT * FROM db_sales WHERE sales_date >= '".dashDate($_REQUEST['datefrom'])."' AND sales_date <=  '".dashDate($_REQUEST['dateto'])."' group by sales_date";
+$result = mysqli_query($con,$query);
+if(mysqli_num_rows($result) > 0){ 
+    // Output each row of the data 
+    while($row = mysqli_fetch_array($result) ){
+        //$status = ($row['replenish'] == 1)?'Active':'Inactive'; 
+        $response[] = array("sales_date"=>$row['sales_date'],"sold_by"=>$row['sold_by']);
+    }
+        $total=0;
+        foreach($response as $key => $value) {
+            
+            $excelData .= $value['sales_date'] ."\t";
+
+            $query = "SELECT sum(cash_amount) as totalcash,station,sum(loan_amount) as totalloan,sold_by FROM db_sales where sales_date = '".$value['sales_date']."' group by sold_by ASC";
+            $result = mysqli_query($con,$query);
+            while($row = mysqli_fetch_array($result) ){
+                $total+=$row['totalcash']+$row['totalloan'];
+                $excelData .= $row['totalcash']+$row['totalloan'] . "\t";
+                $excelData .= $total . "\n";
+                                
+            }
+
+        }
+    
+        /*array_walk($lineData, 'filterData'); 
+        $excelData .= implode("\t", array_values($lineData)) . "\n"; */
+     
+}else{ 
+    
+    $excelData .= 'No records found...'. "\n"; 
+} 
+
+}
+
+
+
+//done - please recheck
+if(isset($_REQUEST['viewprofitreport'])){
+$fileName = "viewprofitreport.xls"; 
+// Column names 
+$fields = array('Invoice Number', 'Purchase Date','Terminal','Amount','Cost','Profit', '% Markup'); 
+$excelData="Baguio-Benguet Community Credit Cooperative". "\n"; 
+$excelData.="Data ID". "\n"; 
+$excelData.=$_REQUEST['datefrom']." - ".$_REQUEST['dateto']."\n\n"; 
+// Display column names as first row 
+$excelData.= implode("\t", array_values($fields)) . "\n"; 
+ 
+// Fetch records from database ".$_REQUEST['dataid']."
+$query = "SELECT * FROM db_sales where sales_date >= '".dashDate($_REQUEST['datefrom'])."' AND sales_date <=  '".dashDate($_REQUEST['dateto'])."'";
+$result = mysqli_query($con,$query);
+if(mysqli_num_rows($result) > 0){ 
+    // Output each row of the data 
+    while($row = mysqli_fetch_array($result) ){
+
+        $response[] = array("invoiceno"=>$row['invoiceno'],"cash_amount"=>$row['cash_amount'],"total_sales"=>$row['total_sales'],"station"=>$row['station'],"sales_date"=>$row['sales_date'],"sold_by"=>$row['sold_by'],"total_cost"=>$row['total_cost'],"payment_mode"=>$row['payment_mode']);
+    }
+        $totalloan=0;
+        $no=1;
+        foreach($response as $key => $value) {
+            $profit=0;
+            $markup=0;
+            $no++;
+            $excelData .= $value['invoiceno'] ."\t";
+            $excelData .= $value['sales_date'] ."\t";
+            $excelData .= $value['station'] ."\t";
+            $excelData .= $value['total_sales'] ."\t";
+            $excelData .= number_format($value['total_cost'],2)."\t";
+            $profit= floatval($value['total_sales'])-floatval($value['total_cost']);
+            $excelData .= number_format($profit,2)."\t";
+
+            //php throws DivisionByZeroError if total_cost is 0
+            if($value['total_cost'] == 0){
+                $markup= 0;
+            }else{
+                $markup=100*($profit/$value['total_cost']);
+            }
+            
+            $excelData .= number_format($markup,2)."% \n";
+
+        }
+    
+        /*array_walk($lineData, 'filterData'); 
+        $excelData .= implode("\t", array_values($lineData)) . "\n"; */
+     
+}else{ 
+    
+    $excelData .= 'No records found...'. "\n"; 
+} 
+
+}
+
+//done - please recheck
+if(isset($_REQUEST['viewpurchasereturnreport'])){
+$fileName = "viewpurchasereturnreport.xls"; 
+// Column names 
+$fields = array('Barcode', 'Product Name','Quantity','Unit Cost','Amount','Remarks'); 
+$excelData="Baguio-Benguet Community Credit Cooperative". "\n"; 
+$excelData.="Data ID". "\n"; 
+$excelData.=$_REQUEST['datefrom']." - ".$_REQUEST['dateto']."\n\n"; 
+// Display column names as first row 
+
+ 
+// Fetch records from database ".$_REQUEST['dataid']."
+$query = "SELECT * FROM db_purchase_return where return_date >= '".dashDate($_REQUEST['datefrom'])."' AND return_date <=  '".dashDate($_REQUEST['dateto'])."'";
+$result = mysqli_query($con,$query);
+if(mysqli_num_rows($result) > 0){ 
+    // Output each row of the data 
+    while($row = mysqli_fetch_array($result) ){
+
+     $response[] = array("return_id"=>$row['id'],"supplier_id"=>$row['supplier_id'],"return_area"=>$row['return_area'],"return_date"=>$row['return_date']);
+    }
+
+        $no=1;$total=0;
+        foreach($response as $key => $value) 
+        {
+            switch($value['return_area']){
+                  case 1: $excelData .= "Warehouse\n";break;
+                  case 2: $excelData .= "Selling area\n";break;
+                  default: "";
+            }
+
+            $query = "SELECT supplier_name FROM db_supplier WHERE supplier_id='" .$value['supplier_id'] ."'";
+            $result = mysqli_query($con,$query);
+            $row = mysqli_fetch_array($result);
+            $excelData .= $row['supplier_name']."\t";
+            $excelData .= $value['return_id']."\t";
+            $excelData .= $value['return_date']."\n";
+            $excelData.= implode("\t", array_values($fields)) . "\n"; 
+
+
+            $query2 = "SELECT * FROM db_prod_purchase_return where return_id= '".$value['return_id']."'";
+            $result2 = mysqli_query($con,$query2);
+
+            while($row2= mysqli_fetch_array($result2) ){
+
+                $total+=($row2['quantity']*$row2['price']);
+
+                $query = "SELECT barcode FROM db_products WHERE product_id='".$row2['item_id']."'";
+                $result = mysqli_query($con,$query);
+                $row = mysqli_fetch_array($result); 
+                $excelData .= $row['barcode']."\t";
+
+                $query = "SELECT product_name FROM db_products WHERE product_id='".$row2['item_id']."'";
+                $result = mysqli_query($con,$query);
+                $row = mysqli_fetch_array($result); 
+                $excelData .=  $row['product_name']."\t";
+
+                $excelData .= $row2['quantity']."\t";
+                $excelData .=$row2['price']."\t";
+                $excelData .=number_format($row2['quantity']*$row2['price'],2)."\n";
+
+            }
+
+            $excelData .= "Total: \t".number_format($total,2)."\n\n";
+
+        
+
+        }
+    
+        /*array_walk($lineData, 'filterData'); 
+        $excelData .= implode("\t", array_values($lineData)) . "\n"; */
+     
+}else{ 
+    
+    $excelData .= 'No records found...'. "\n"; 
+} 
+
+}
 
 
 
