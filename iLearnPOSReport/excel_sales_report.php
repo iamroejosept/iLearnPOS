@@ -8,6 +8,8 @@ $dbName     = "bbcccpos";
  
 // Create database connection 
 $db = new mysqli($dbHost, $dbUsername, $dbPassword, $dbName); 
+// Create connection
+$con = mysqli_connect($dbHost, $dbUsername, $dbPassword, $dbName); 
  
 // Check connection 
 if ($db->connect_error) { 
@@ -149,6 +151,151 @@ if(isset($_REQUEST['viewreturns'])){
                 $excelData.= "INVOICE AMOUNT:\t" .number_format($invoiceamount-$val['discount_amount'],2)."\n\n";
                 
             }
+            $excelData .= "\n";
+
+    
+    }
+}
+
+//Done
+if(isset($_REQUEST['viewdeliveryreport'])){
+    $fileName = "viewdeliveryreport.xls"; 
+    $excelData="Baguio-Benguet Community Credit Cooperative". "\n"; 
+    $excelData.="Delivery Report". "\n"; 
+    $excelData.=$_REQUEST['datefrom']." - ".$_REQUEST['dateto']."\n\n"; 
+    // Display column names as first row 
+    // $excelData.= implode("\t", array_values($fields)) . "\n"; 
+     
+    // Fetch records from database 
+    $query = "SELECT * FROM db_delivery where rr_date >= '".dashDate($_REQUEST['datefrom'])."' AND rr_date <=  '".dashDate($_REQUEST['dateto'])."'";
+    $result = $db->query($query);
+    if($result->num_rows > 0){ 
+        // Output each row of the data 
+            while($row = $result->fetch_assoc() ){
+                $response[] = array("delivery_id"=>$row['delivery_id'],"invoiceno"=>$row['invoice_no'],"rr_date"=>$row['rr_date'],"supplier_id"=>$row['supplier_id'],"subtotal"=>$row['subtotal'],"net_amount"=>$row['net_amount'],"payment_status"=>$row['payment_status']);
+            }
+
+            // Column names 
+            $fields = array('INVOICE NUMBER', 'RR DATE', 'SUPPLIER', 'SUBTOTAL', 'NET AMOUNT', 'PAYMENT STATUS'); 
+            $excelData.= implode("\t", array_values($fields)) ."\n";
+
+            foreach($response as $key => $val){
+                $query1 = "SELECT supplier_name FROM db_supplier WHERE supplier_id='".$val['supplier_id']."'";
+                $result1 = mysqli_query($con,$query1);
+                $row1 = mysqli_fetch_array($result1); 
+
+                $response1 = array("invoiceno"=>$val['invoiceno'],"rr_date"=>$val['rr_date'],"supplier_id"=>$row1['supplier_name'],"subtotal"=>$val['subtotal'],"net_amount"=>$val['net_amount'],"payment_status"=>($val['payment_status']=="1") ? "Paid" : "");
+
+                array_walk($response1, 'filterData'); 
+                    
+                $excelData .= implode("\t", array_values($response1)) . "\n";
+                
+            }
+            $excelData .= "\n";
+
+    
+    }
+}
+
+//Done
+if(isset($_REQUEST['viewmemdetailedreport'])){
+    $fileName = "viewmemdetailedreport.xls"; 
+    $excelData="Baguio-Benguet Community Credit Cooperative". "\n"; 
+    $excelData.="View Me Detailed Report". "\n"; 
+    $excelData.=$_REQUEST['datefrom']." - ".$_REQUEST['dateto']."\n\n"; 
+    // Display column names as first row 
+    // $excelData.= implode("\t", array_values($fields)) . "\n"; 
+     
+    // Fetch records from database 
+    $query = "SELECT * FROM db_sales where sales_date >= '".dashDate($_REQUEST['datefrom'])."' AND sales_date <=  '".dashDate($_REQUEST['dateto'])."' AND member_id='".$_REQUEST['memberid']."'";
+    $result = $db->query($query);
+    if($result->num_rows > 0){ 
+        // Output each row of the data 
+            while($row = $result->fetch_assoc() ){
+                $response[] = array("invoiceno"=>$row['invoiceno'],"gross_sale"=>$row['gross_sale'],"discount_amount"=>$row['discount_amount'],"station"=>$row['station'],"sales_date"=>$row['sales_date'],"sold_by"=>$row['sold_by'],"member_id"=>$row['member_id'],"payment_mode"=>$row['payment_mode'],"sales_id"=>$row['sales_id']);
+            }
+
+            foreach($response as $key => $val){
+                $invoiceamount=0;
+
+                $query1 = "SELECT * FROM db_users WHERE userid='".$val['sold_by']."'";
+                $result1 = mysqli_query($con,$query1);
+                $row1 = mysqli_fetch_array($result1); 
+
+                $excelData.= "INVOICE NUMBER:\t" .$val["invoiceno"] ."\t\tCASHIER:\t" .$row1['fname']." ".$row1['lname'] ."\n";
+                $excelData.= "INVOICE DATE:\t" .$val["sales_date"] ."\t\tTERMINAL:\t" .$val["station"] ."\n\n";
+
+                // Column names 
+                $fields = array('BARCODE', 'PRODUCT NAME', 'QTY', 'PRICE', 'ITEM DISCOUNT (%)', 'AMOUNT'); 
+                $excelData.= implode("\t", array_values($fields)) ."\n";
+
+                $result = $db->query("SELECT * FROM db_sales_product where sales_id = '".$val['sales_id']."'");
+    
+                while($row = $result->fetch_assoc()){
+                    $amount=$row['quantity']*$row['sale_price'];
+
+                    $querys = "SELECT barcode,product_name FROM db_products WHERE product_id='".$row['product_id']."'";
+                    $results = mysqli_query($con,$querys);
+                    $rows = mysqli_fetch_array($results); 
+
+                    $response1 = array("barcode"=>$rows['barcode'],"product_name"=>$rows['product_name'],"quantity"=>$row['quantity'],"sale_price"=>number_format($row['sale_price'],2),"discount"=>$row['discount'],"amount"=>number_format($amount,2));
+
+                    $invoiceamount+=$amount;
+
+                    array_walk($response1, 'filterData'); 
+                    
+                    $excelData .= implode("\t", array_values($response1)) . "\n"; 
+                }
+
+                $excelData.= "DISCOUNT:\t" .number_format($val['discount_amount'],2)."\t\t";
+                $excelData.= "INVOICE AMOUNT:\t" .number_format($invoiceamount-$val['discount_amount'],2)."\n\n";
+                
+            }
+            $excelData .= "\n";
+
+    
+    }
+}
+
+//Done
+if(isset($_REQUEST['viewtransferreport'])){
+    $fileName = "viewtransferreport.xls"; 
+    $excelData="Baguio-Benguet Community Credit Cooperative". "\n"; 
+    $excelData.="View Transfer Report". "\n"; 
+    $excelData.=$_REQUEST['datefrom']." - ".$_REQUEST['dateto']."\n\n"; 
+    // Display column names as first row 
+    // $excelData.= implode("\t", array_values($fields)) . "\n"; 
+     
+    // Fetch records from database 
+    $query = "SELECT * FROM db_transfers where transfer_date >= '".dashDate($_REQUEST['datefrom'])."' AND transfer_date <=  '".dashDate($_REQUEST['dateto'])."'";
+    $result = $db->query($query);
+    if($result->num_rows > 0){ 
+        // Output each row of the data 
+            while($row = $result->fetch_assoc() ){
+                $response[] = array("product_id"=>$row['product_id'],"quantity"=>$row['quantity'],"current_price"=>$row['current_price'],"area"=>$row['area']);
+            }
+
+            // Column names 
+            $fields = array('BARCODE', 'ITEM DESCRIPTION', 'QUANTITY', 'PRICE', 'AMOUNT'); 
+            $excelData.= implode("\t", array_values($fields)) ."\n";
+
+            $total=0;
+
+            foreach($response as $key => $val){
+                $query1 = "SELECT barcode,product_name FROM db_products WHERE product_id='".$val['product_id']."'";
+                $result1 = mysqli_query($con,$query1);
+                $row1 = mysqli_fetch_array($result1); 
+
+                $response1 = array("barcode"=>$row1['barcode'],"product_name"=>$row1['product_name'],"quantity"=>$val['quantity'],"current_price"=>$val['current_price'],"amount"=>number_format($val['quantity']*$val['current_price'],2));
+
+                array_walk($response1, 'filterData'); 
+                    
+                $excelData .= implode("\t", array_values($response1)) . "\n"; 
+
+                $total+=($val['quantity']*$val['current_price']);
+                
+            }
+            $excelData.= "TOTAL AMOUNT:\t" .number_format($total,2)."\t\t";
             $excelData .= "\n";
 
     
