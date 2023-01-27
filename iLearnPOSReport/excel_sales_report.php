@@ -8,6 +8,8 @@ $dbName     = "bbcccpos";
  
 // Create database connection 
 $db = new mysqli($dbHost, $dbUsername, $dbPassword, $dbName); 
+// Create connection
+$con = mysqli_connect($dbHost, $dbUsername, $dbPassword, $dbName); 
  
 // Check connection 
 if ($db->connect_error) { 
@@ -147,6 +149,46 @@ if(isset($_REQUEST['viewreturns'])){
 
                 $excelData.= "DISCOUNT:\t" .number_format($val['discount_amount'],2)."\t\t";
                 $excelData.= "INVOICE AMOUNT:\t" .number_format($invoiceamount-$val['discount_amount'],2)."\n\n";
+                
+            }
+            $excelData .= "\n";
+
+    
+    }
+}
+
+//Done
+if(isset($_REQUEST['viewdeliveryreport'])){
+    $fileName = "viewdeliveryreport.xls"; 
+    $excelData="Baguio-Benguet Community Credit Cooperative". "\n"; 
+    $excelData.="Delivery Report". "\n"; 
+    $excelData.=$_REQUEST['datefrom']." - ".$_REQUEST['dateto']."\n\n"; 
+    // Display column names as first row 
+    // $excelData.= implode("\t", array_values($fields)) . "\n"; 
+     
+    // Fetch records from database 
+    $query = "SELECT * FROM db_delivery where rr_date >= '".dashDate($_REQUEST['datefrom'])."' AND rr_date <=  '".dashDate($_REQUEST['dateto'])."'";
+    $result = $db->query($query);
+    if($result->num_rows > 0){ 
+        // Output each row of the data 
+            while($row = $result->fetch_assoc() ){
+                $response[] = array("delivery_id"=>$row['delivery_id'],"invoiceno"=>$row['invoice_no'],"rr_date"=>$row['rr_date'],"supplier_id"=>$row['supplier_id'],"subtotal"=>$row['subtotal'],"net_amount"=>$row['net_amount'],"payment_status"=>$row['payment_status']);
+            }
+
+            // Column names 
+            $fields = array('INVOICE NUMBER', 'RR DATE', 'SUPPLIER', 'SUBTOTAL', 'NET AMOUNT', 'PAYMENT STATUS'); 
+            $excelData.= implode("\t", array_values($fields)) ."\n";
+
+            foreach($response as $key => $val){
+                $query1 = "SELECT supplier_name FROM db_supplier WHERE supplier_id='".$val['supplier_id']."'";
+                $result1 = mysqli_query($con,$query1);
+                $row1 = mysqli_fetch_array($result1); 
+
+                $response1 = array("invoiceno"=>$val['invoiceno'],"rr_date"=>$val['rr_date'],"supplier_id"=>$row1['supplier_name'],"subtotal"=>$val['subtotal'],"net_amount"=>$val['net_amount'],"payment_status"=>($val['payment_status']=="1") ? "Paid" : "");
+
+                array_walk($response1, 'filterData'); 
+                    
+                $excelData .= implode("\t", array_values($response1)) . "\n";
                 
             }
             $excelData .= "\n";
