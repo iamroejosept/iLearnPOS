@@ -236,7 +236,7 @@ if(isset($_REQUEST['viewreturns'])){
                     $excelData .= implode("\t", array_values($response1)) . "\n"; 
                 }
 
-                $excelData.= "DISCOUNT:\t" .number_format($val['discount_amount'],2);
+                $excelData.= "DISCOUNT:\t" .number_format($val['discount_amount'],2)."\t\t";
                 $excelData.= "INVOICE AMOUNT:\t" .number_format($invoiceamount-$val['discount_amount'],2)."\n\n";
                 
             }
