@@ -57,6 +57,59 @@ if($query->num_rows > 0){
 
 }
 
+
+
+    //generates view detailed report excel
+    if(isset($_REQUEST['viewdetailedsalesreport'])){
+        $fileName = "viewdetailedsalesreport.xls"; 
+        // Column names 
+        $fields = array('BARCODE', 'PRODUCT NAME', 'QTY', 'PRICE', 'ITEM DISCOUNT(%)', 'AMOUNT'); 
+        $excelData="Baguio-Benguet Community Credit Cooperative". "\n"; 
+        $excelData.="View Detailed Sales Items". "\n"; 
+        $excelData.=$_REQUEST['datefrom']." - ".$_REQUEST['dateto']."\n\n"; 
+        // Display column names as first row 
+        // $excelData.= implode("\t", array_values($fields)) . "\n"; 
+         
+        // Fetch records from database 
+        $query = "SELECT * FROM db_sales where sales_date >= '".dashDate($_REQUEST['datefrom'])."' AND sales_date <=  '".dashDate($_REQUEST['dateto'])."'";
+        $result = $db->query($query);
+        if($result->num_rows > 0){ 
+            // Output each row of the data 
+                while($row = $result->fetch_assoc() ){
+                    $response[] = array('invoiceno'=>$row['invoiceno'],"gross_sale"=>$row['gross_sale'],"discount_amount"=>$row['discount_amount'],"station"=>$row['station'],"sales_date"=>$row['sales_date'],"sold_by"=>$row['sold_by'],"member_id"=>$row['member_id'],"payment_mode"=>$row['payment_mode'],"sales_id"=>$row['sales_id']);
+                }
+        
+                foreach($response as $key => $val){
+                    $excelData.= "INVOICE NUMBER:\t" .$val["invoiceno"] ."\t\tCASHIER:\t" .$val["sold_by"] ."\n";
+                    $excelData.= "INVOICE DATE:\t" .$val["sales_date"] ."\t\tTERMINAL:\t" .$val["station"] ."\n\n";
+                    $excelData.= implode("\t", array_values($fields)) ."\n";
+        
+                    $id = array();
+                    $id = $val["sales_id"]; 
+                    
+                    $result = $db->query("SELECT * FROM db_sales_product where sales_id = $id");
+            
+                    while($row = $result->fetch_assoc()){
+                    $response1 = array("invoiceno"=>" ","product_name"=>" ","quantity"=>$row['quantity'],"sale_price"=>$row['sale_price'],"discount"=>$row['discount'],"amount"=>($row['sale_price']*$row['quantity']),"discount_amount"=>" ","invoice_amount"=>" ");
+        
+                    array_walk($response1, 'filterData'); 
+                    
+                    $excelData .= implode("\t", array_values($response1)) . "\n"; 
+                    }
+                    $excelData .= "\n";
+                }
+                    
+        
+                 
+        }else{ 
+            
+            $excelData .= 'No records found...'. "\n"; 
+        } 
+        
+        
+        
+        }
+
 //generates view delivery report excel
 //Done
 if(isset($_REQUEST['viewdeliveryreport'])){
@@ -64,7 +117,7 @@ if(isset($_REQUEST['viewdeliveryreport'])){
     // Column names 
     $fields = array('INVOICE NUMBER', 'RR DATE', 'SUPPLIER', 'SUBTOTAL', 'NET AMOUNT', 'PAYMENT STATUS'); 
     $excelData="Baguio-Benguet Community Credit Cooperative". "\n"; 
-    $excelData.="Delivery Report". "\n"; 
+    $excelData.="View Delivery Report". "\n"; 
     $excelData.=$_REQUEST['datefrom']." - ".$_REQUEST['dateto']."\n\n"; 
     // Display column names as first row 
     // $excelData.= implode("\t", array_values($fields)) . "\n"; 
@@ -161,7 +214,7 @@ if(isset($_REQUEST['viewreturns'])){
 if(isset($_REQUEST['viewdeliveryreport'])){
     $fileName = "viewdeliveryreport.xls"; 
     $excelData="Baguio-Benguet Community Credit Cooperative". "\n"; 
-    $excelData.="Delivery Report". "\n"; 
+    $excelData.="View Delivery Report". "\n"; 
     $excelData.=$_REQUEST['datefrom']." - ".$_REQUEST['dateto']."\n\n"; 
     // Display column names as first row 
     // $excelData.= implode("\t", array_values($fields)) . "\n"; 
@@ -308,7 +361,7 @@ $fileName = "viewtallyreport.xls";
 // Column names 
 $fields = array('Date', 'Total'); 
 $excelData="Baguio-Benguet Community Credit Cooperative". "\n"; 
-$excelData.="Data ID". "\n"; 
+$excelData.="View Tally Report". "\n"; 
 $excelData.=$_REQUEST['datefrom']." - ".$_REQUEST['dateto']."\n\n"; 
 // Display column names as first row 
 $excelData.= implode("\t", array_values($fields)) . "\n"; 
@@ -357,7 +410,7 @@ $fileName = "viewprofitreport.xls";
 // Column names 
 $fields = array('Invoice Number', 'Purchase Date','Terminal','Amount','Cost','Profit', '% Markup'); 
 $excelData="Baguio-Benguet Community Credit Cooperative". "\n"; 
-$excelData.="Data ID". "\n"; 
+$excelData.="View Profit Report". "\n"; 
 $excelData.=$_REQUEST['datefrom']." - ".$_REQUEST['dateto']."\n\n"; 
 // Display column names as first row 
 $excelData.= implode("\t", array_values($fields)) . "\n"; 
@@ -413,7 +466,7 @@ $fileName = "viewpurchasereturnreport.xls";
 // Column names 
 $fields = array('Barcode', 'Product Name','Quantity','Unit Cost','Amount','Remarks'); 
 $excelData="Baguio-Benguet Community Credit Cooperative". "\n"; 
-$excelData.="Data ID". "\n"; 
+$excelData.="View Purchase Return Report". "\n"; 
 $excelData.=$_REQUEST['datefrom']." - ".$_REQUEST['dateto']."\n\n"; 
 // Display column names as first row 
 
@@ -491,7 +544,7 @@ $fileName = "viewmemsalesreport.xls";
 // Column names 
 $fields = array('Invoice Number', 'Purchase Date','Time','Terminal','Cashier','Member ID','Name','Loan','Cash','Amount' ); 
 $excelData="Baguio-Benguet Community Credit Cooperative". "\n"; 
-$excelData.="Data ID". "\n"; 
+$excelData.="View Me Sales Report". "\n"; 
 $excelData.=$_REQUEST['datefrom']." - ".$_REQUEST['dateto']."\n\n"; 
 // Display column names as first row 
 $excelData.= implode("\t", array_values($fields)) . "\n";
@@ -587,7 +640,7 @@ $fileName = "rice_item.xls";
 // Column names 
 $fields = array('No.','Invoice No', 'Mem. No','Name','Quantity','Disc','Payment','Amount'); 
 $excelData="Baguio-Benguet Community Credit Cooperative". "\n"; 
-$excelData.="Data ID". "\n"; 
+$excelData.="Rice Item". "\n"; 
 $excelData.=$_REQUEST['datefrom']." - ".$_REQUEST['dateto']."\n\n"; 
 // Display column names as first row 
 
@@ -707,6 +760,107 @@ if(mysqli_num_rows($result1) > 0){
 } 
 
 }
+
+
+//generates view sale report excel
+if(isset($_REQUEST['viewsalesreport'])){
+    $fileName = "viewsalesreport.xls"; 
+    // Column names 
+    $fields = array('INVOICE NUMBER', 'PURCHASE DATE', 'TIME','TERMINAL', 'CASHIER', 'MEMBER ID', 'NAME', 'LOAN', 'CASH', 'AMOUNT'); 
+    $excelData="Baguio-Benguet Community Credit Cooperative". "\n"; 
+    $excelData.="View Sales Report". "\n"; 
+    $excelData.=$_REQUEST['datefrom']." - ".$_REQUEST['dateto']."\n\n"; 
+    // Display column names as first row 
+    $excelData.= implode("\t", array_values($fields)) . "\n"; 
+    
+    /*global $con;*/
+     
+    // Fetch records from database 
+    $query = "SELECT * FROM db_sales where sales_date >= '".dashDate($_REQUEST['datefrom'])."' AND sales_date <=  '".dashDate($_REQUEST['dateto'])."'";
+    $result = mysqli_query($con,$query);
+    if(mysqli_num_rows($result) > 0){ 
+        // Output each row of the data 
+
+        while($row = mysqli_fetch_array($result) ){
+
+            $response[] = array("invoiceno"=>$row['invoiceno'],"cash_amount"=>$row['cash_amount'],"loan_amount"=>$row['loan_amount'],"station"=>$row['station'],"sales_date"=>$row['sales_date'],"sold_by"=>$row['sold_by'],"member_id"=>$row['member_id'],"payment_mode"=>$row['payment_mode']);
+        }
+
+        $totalsale=0;
+        $totalcash=0;
+        $totalloan=0;
+        $no=1;
+        foreach($response as $key => $value){
+            $excelData .= $value['invoiceno'] ."\t";
+            $excelData .= $value['sales_date'] ."\t";
+            $excelData .= $value['sales_date'] ."\t";
+            $excelData .= $value['station'] ."\t";
+
+            $query = "SELECT * FROM db_users WHERE userid='".$value['sold_by']."'";
+            $result = mysqli_query($con,$query);
+            $row = mysqli_fetch_array($result); 
+            if(!empty($row['fname'])){
+                $excelData .=  $row['fname'].", ";
+            }else{
+                $excelData .=  "";
+            }
+            if(!empty($row['lname'])){
+                $excelData .=  $row['lname']." \t";
+            }else{
+                $excelData .=  "\t";
+            }
+
+            $excelData .= $value['member_id'] ."\t";
+
+            $query = "SELECT fname,mname,lname FROM db_member WHERE bbcc_id='".$value['member_id']."'";
+            $result = mysqli_query($con,$query);
+            $row99 = mysqli_fetch_array($result); 
+            if(!empty($row99['lname'])){
+                $excelData .=  $row99['lname'].", ";
+            }else{
+                $excelData .=  "";
+            }
+
+            if(!empty($row99['fname'])){
+                $excelData .=  $row99['fname']." ";
+            }else{
+                $excelData .=  "";
+            }
+
+            if(!empty($row99['mname'])){
+                $excelData .=  $row99['mname']." \t";
+            }else{
+                $excelData .=  "\t";
+            }
+
+            $excelData .= number_format($value['loan_amount'],2) ."\t";
+            $excelData .= number_format($value['cash_amount'],2) ."\t";
+            $excelData .= number_format($value['cash_amount']+$value['loan_amount'],2) ."\n";
+
+            $totalsale+=$value['cash_amount']+$value['loan_amount'];
+            $totalcash+=$value['cash_amount'];$totalloan+=$value['loan_amount'];
+        }
+
+        $excelData .=  "\t";
+        $excelData .=  "\t";
+        $excelData .=  "\t";
+        $excelData .=  "\t";
+        $excelData .=  "\t";
+        $excelData .=  "\t";
+        $excelData .=  "Total >>> \t";
+        $excelData .= number_format($totalloan,2) ."\t";
+        $excelData .= number_format($totalcash,2) ."\t";
+        $excelData .= number_format($totalsale,2) ."\t";
+
+        
+    }else{ 
+        
+        $excelData .= 'No records found...'. "\n"; 
+    } 
+    
+    
+    
+    }
 
 
 header("Content-Type: application/vnd.ms-excel"); 
