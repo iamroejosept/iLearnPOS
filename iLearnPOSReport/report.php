@@ -179,7 +179,7 @@ if(isset($_REQUEST['viewsalesreport'])){
     
     }
 
-    //generates view detailed report excel
+    //Done, please recheck
     if(isset($_REQUEST['viewdetailedsalesreport'])){
         $fileName = "viewdetailedsalesreport.xls"; 
         // Column names 
@@ -206,16 +206,16 @@ if(isset($_REQUEST['viewsalesreport'])){
                     $excelData.= "\t";
                     $excelData.= "\t";
                     $excelData.= "Cashier: \t";
-                    $query = "SELECT * FROM db_users WHERE userid='".$value['sold_by']."'";
-                    $result = mysqli_query($con,$query);
-                    $row = mysqli_fetch_array($result); 
-                    if(!empty($row['fname'])){
-                        $excelData .=  $row['fname'].", ";
+                    $query1 = "SELECT * FROM db_users WHERE userid='".$value['sold_by']."'";
+                    $result1 = mysqli_query($con,$query1);
+                    $row1 = mysqli_fetch_array($result1); 
+                    if(!empty($row1['fname'])){
+                        $excelData .=  $row1['fname'].", ";
                     }else{
                         $excelData .=  "";
                     }
-                    if(!empty($row['lname'])){
-                        $excelData .=  $row['lname']." \n";
+                    if(!empty($row1['lname'])){
+                        $excelData .=  $row1['lname']." \n";
                     }else{
                         $excelData .=  "\n";
                     }
@@ -234,28 +234,29 @@ if(isset($_REQUEST['viewsalesreport'])){
                     $result = mysqli_query($con,$query);
                     
                     while($row = mysqli_fetch_array($result) ){ 
-                        $query = "SELECT barcode,product_name FROM db_products WHERE product_id='".$row['product_id']."'";
-                        $result = mysqli_query($con,$query);
-                        $row = mysqli_fetch_array($result); 
-                        $excelData .=  $row['barcode']."\t";
-                        $excelData .=  $row['product_name'] ."\t";
+                        $query2 = "SELECT barcode,product_name FROM db_products WHERE product_id='".$row['product_id']."'";
+                        $result2 = mysqli_query($con,$query2);
+                        $row2 = mysqli_fetch_array($result2); 
+                        $excelData .=  $row2['barcode']."\t";
+                        $excelData .=  $row2['product_name'] ."\t";
 
                         if(empty($row['quantity'])){
                             $row['quantity'] = 0;
-                            $excelData .= $row['quantity'];
+                            $excelData .= $row['quantity']."\t";
                         }else{
                             $excelData .=  $row['quantity']."\t";
                         }
 
                         if(empty($row['sale_price'])){
                             $row['sale_price'] = 0;
-                            $excelData .= $row['sale_price'];
+                            $excelData .= $row['sale_price']."\t";
                         }else{
                             $excelData .= number_format($row['sale_price'],2)."\t";
                         }
 
                         if(empty($row['discount'])){
-                            $excelData .=  0;
+                            $row['discount'] = 0;
+                            $excelData .=  $row['discount']."\t";
                         }else{
                             $excelData .=  $row['discount']."% \t";
                         }
@@ -279,6 +280,7 @@ if(isset($_REQUEST['viewsalesreport'])){
                     $excelData.= "\t";
                     $excelData .=  "Invoice Amount \t";
                     $excelData .=  number_format($invoiceamount-$value['discount_amount'],2) ." \n";
+                    $excelData.= "\n";
 
                 }
                     

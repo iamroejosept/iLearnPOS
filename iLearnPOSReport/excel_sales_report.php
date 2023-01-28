@@ -59,7 +59,7 @@ if($query->num_rows > 0){
 
 
 
-    //generates view detailed report excel
+    //Done, please recheck
     if(isset($_REQUEST['viewdetailedsalesreport'])){
         $fileName = "viewdetailedsalesreport.xls"; 
         // Column names 
@@ -72,31 +72,96 @@ if($query->num_rows > 0){
          
         // Fetch records from database 
         $query = "SELECT * FROM db_sales where sales_date >= '".dashDate($_REQUEST['datefrom'])."' AND sales_date <=  '".dashDate($_REQUEST['dateto'])."'";
-        $result = $db->query($query);
-        if($result->num_rows > 0){ 
+        $result = mysqli_query($con,$query);
+        if(mysqli_num_rows($result) > 0){ 
             // Output each row of the data 
-                while($row = $result->fetch_assoc() ){
-                    $response[] = array('invoiceno'=>$row['invoiceno'],"gross_sale"=>$row['gross_sale'],"discount_amount"=>$row['discount_amount'],"station"=>$row['station'],"sales_date"=>$row['sales_date'],"sold_by"=>$row['sold_by'],"member_id"=>$row['member_id'],"payment_mode"=>$row['payment_mode'],"sales_id"=>$row['sales_id']);
-                }
-        
-                foreach($response as $key => $val){
-                    $excelData.= "INVOICE NUMBER:\t" .$val["invoiceno"] ."\t\tCASHIER:\t" .$val["sold_by"] ."\n";
-                    $excelData.= "INVOICE DATE:\t" .$val["sales_date"] ."\t\tTERMINAL:\t" .$val["station"] ."\n\n";
-                    $excelData.= implode("\t", array_values($fields)) ."\n";
-        
-                    $id = array();
-                    $id = $val["sales_id"]; 
-                    
-                    $result = $db->query("SELECT * FROM db_sales_product where sales_id = $id");
-            
-                    while($row = $result->fetch_assoc()){
-                    $response1 = array("invoiceno"=>" ","product_name"=>" ","quantity"=>$row['quantity'],"sale_price"=>$row['sale_price'],"discount"=>$row['discount'],"amount"=>($row['sale_price']*$row['quantity']),"discount_amount"=>" ","invoice_amount"=>" ");
-        
-                    array_walk($response1, 'filterData'); 
-                    
-                    $excelData .= implode("\t", array_values($response1)) . "\n"; 
+            while($row = mysqli_fetch_array($result) ){
+
+                $response[] = array("invoiceno"=>$row['invoiceno'],"gross_sale"=>$row['gross_sale'],"discount_amount"=>$row['discount_amount'],"station"=>$row['station'],"sales_date"=>$row['sales_date'],"sold_by"=>$row['sold_by'],"member_id"=>$row['member_id'],"payment_mode"=>$row['payment_mode'],"sales_id"=>$row['sales_id']);
+            }
+                $totalsale=0;
+                foreach($response as $key => $value){
+                    $excelData .= "Invoice Number: \t";
+                    $excelData .= $value['invoiceno'] ."\t";
+                    $excelData.= "\t";
+                    $excelData.= "\t";
+                    $excelData.= "Cashier: \t";
+                    $query1 = "SELECT * FROM db_users WHERE userid='".$value['sold_by']."'";
+                    $result1 = mysqli_query($con,$query1);
+                    $row1 = mysqli_fetch_array($result1); 
+                    if(!empty($row1['fname'])){
+                        $excelData .=  $row1['fname'].", ";
+                    }else{
+                        $excelData .=  "";
                     }
-                    $excelData .= "\n";
+                    if(!empty($row1['lname'])){
+                        $excelData .=  $row1['lname']." \n";
+                    }else{
+                        $excelData .=  "\n";
+                    }
+
+                    $excelData .= "Invoice Date: \t";
+                    $excelData .= $value['sales_date'] ."\t";
+                    $excelData.= "\t";
+                    $excelData.= "\t";
+                    $excelData .= "Terminal: \t";
+                    $excelData .= $value['station'] ."\n\n";
+
+                    $excelData.= implode("\t", array_values($fields)) . "\n";
+
+                    $invoiceamount=0;
+                    $query = "SELECT * FROM db_sales_product where sales_id = '".$value['sales_id']."'";
+                    $result = mysqli_query($con,$query);
+                    
+                    while($row = mysqli_fetch_array($result) ){ 
+                        $query2 = "SELECT barcode,product_name FROM db_products WHERE product_id='".$row['product_id']."'";
+                        $result2 = mysqli_query($con,$query2);
+                        $row2 = mysqli_fetch_array($result2); 
+                        $excelData .=  $row2['barcode']."\t";
+                        $excelData .=  $row2['product_name'] ."\t";
+
+                        if(empty($row['quantity'])){
+                            $row['quantity'] = 0;
+                            $excelData .= $row['quantity']."\t";
+                        }else{
+                            $excelData .=  $row['quantity']."\t";
+                        }
+
+                        if(empty($row['sale_price'])){
+                            $row['sale_price'] = 0;
+                            $excelData .= $row['sale_price']."\t";
+                        }else{
+                            $excelData .= number_format($row['sale_price'],2)."\t";
+                        }
+
+                        if(empty($row['discount'])){
+                            $row['discount'] = 0;
+                            $excelData .=  $row['discount']."\t";
+                        }else{
+                            $excelData .=  $row['discount']."% \t";
+                        }
+                        
+                        $amount=$row['quantity']*$row['sale_price'];
+
+                        $excelData .=  number_format($amount,2)." \n";
+
+                        $invoiceamount+=$amount;
+                    }
+
+                    $excelData.= "\t";
+                    $excelData.= "\t";
+                    $excelData.= "\t";
+                    $excelData.= "\t";
+                    $excelData .=  "Discount(-) \t";
+                    $excelData .=  number_format($value['discount_amount'],2) ." \n";
+                    $excelData.= "\t";
+                    $excelData.= "\t";
+                    $excelData.= "\t";
+                    $excelData.= "\t";
+                    $excelData .=  "Invoice Amount \t";
+                    $excelData .=  number_format($invoiceamount-$value['discount_amount'],2) ." \n";
+                    $excelData.= "\n";
+
                 }
                     
         
